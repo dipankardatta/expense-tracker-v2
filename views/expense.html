@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="../styles/expense.css">
+</head>
+
+<body>
+    <form id="expense-form">
+        <label for="expense-name">Name:</label>
+        <input type="text" id="expense-name" required>
+        <label for="expense-amount">Amount:</label>
+        <input type="number" id="expense-amount" required>
+        <button type="submit">Add</button>
+      </form>
+    <ul id="expenses-list"></ul>
+    <div>Total Expense: Rs<span id="total-expense">0.00</span></div>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        const form = document.getElementById('expense-form');
+        const inputName = document.getElementById('expense-name');
+        const inputAmount = document.getElementById('expense-amount');
+        const expensesList = document.getElementById('expenses-list');
+        const totalExpense = document.getElementById('total-expense');
+        const API_URL = 'http://localhost:3000/users/expenses';
+
+
+        // Add a new expense to the database and update the total
+        async function addExpense(name, amount) {
+            try {
+                console.log('Adding expense:', name, amount);
+                const response = await axios.post(API_URL, { name, amount });
+                updateTotal();
+                renderExpenses();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Remove an expense from the database and update the total
+        async function removeExpense(id) {
+            try {
+                await axios.delete(`${API_URL}/${id}`);
+                updateTotal();
+                renderExpenses();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Update the total value of all expenses
+        async function updateTotal() {
+            try {
+                const response = await axios.get(API_URL);
+                const expenses = response.data;
+                const total = expenses.reduce((acc, cur) => acc + cur.amount, 0);
+                totalExpense.textContent = total.toFixed(2);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Render the list of expenses from the database to the page
+        function renderExpenses() {
+            axios.get(API_URL)
+                .then(response => {
+                    expensesList.innerHTML = '';
+                    const expenses = response.data;
+                    expenses.forEach(expense => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `${expense.name}: Rs ${expense.amount.toFixed(2)} <button class="delete" data-id="${expense.id}">X</button>`;
+                        expensesList.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+        }
+
+        // Handle form submit event
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const name = inputName.value;
+            const amount = parseFloat(inputAmount.value);
+            await addExpense(name, amount);
+            inputName.value = '';
+            inputAmount.value = '';
+        });
+
+        // Handle delete button click event
+        expensesList.addEventListener('click', async e => {
+            if (e.target.matches('button.delete')) {
+                const id = e.target.dataset.id;
+                await removeExpense(id);
+            }
+        });
+
+        // Render the initial list of expenses and total
+        renderExpenses();
+        updateTotal();
+    </script>
+</body>
+
+</html>

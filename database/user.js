@@ -1,12 +1,12 @@
 const Sequelize = require('sequelize');
-const ExpenseModel = require('../models/expense');
+const userModel = require('../models/user');
 
-const sequelize = new Sequelize('expense', 'root', '123456', {
+const sequelize = new Sequelize('user', 'root', '123456', {
   host: 'localhost',
   dialect: 'mysql'
 });
 
-const Expense = ExpenseModel(sequelize);
+const User = userModel(sequelize);
 
 sequelize.sync()
   .then(() => {
@@ -14,5 +14,5 @@ sequelize.sync()
   });
 
 module.exports = {
-  Expense
+  User
 };

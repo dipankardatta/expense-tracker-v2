@@ -1,20 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIGN IN PAGE</title>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGN IN PAGE</title>
+  <link rel="stylesheet" href="../styles/signin.css">
 </head>
+
 <body>
-    <h1>Sign In</h1>
+  <h1>Sign In</h1>
   <form id="signin-form">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required>
+    <h2>Sign In</h2>
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+    </div>
     <button type="submit">Sign In</button>
   </form>
+
   <a href="signup.html">New user Sign Up</a>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script>
@@ -25,9 +34,10 @@
       const email = document.querySelector('#email').value;
       const password = document.querySelector('#password').value;
       try {
-        const response = await axios.post(API_URL , { email, password });
-        if (response.status === 200){
+        const response = await axios.post(API_URL, { email, password });
+        if (response.status === 200) {
           alert(response.data.message);
+          window.location.href = 'expense.html'
         } else {
           alert('Invalid email or password');
         }
@@ -41,4 +51,5 @@
     });
   </script>
 </body>
+
 </html>
