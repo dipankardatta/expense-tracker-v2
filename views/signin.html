@@ -22,20 +22,21 @@
     const API_URL = 'http://localhost:3000/users/signin'
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      console.log(e.target.name)
       const email = document.querySelector('#email').value;
       const password = document.querySelector('#password').value;
       try {
         const response = await axios.post(API_URL , { email, password });
         if (response.status === 200){
           alert(response.data.message);
-        }
-        else{
-          throw new Error (response.data.message)
+        } else {
+          alert('Invalid email or password');
         }
       } catch (error) {
-        console.log(JSON.stringify(error))
-        
+        if (error.response && error.response.data && error.response.data.error) {
+          alert(error.response.data.error);
+        } else {
+          alert('An error occurred');
+        }
       }
     });
   </script>
