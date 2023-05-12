@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const app = express();
+const bcrypt = require('bcrypt')
 const port = 3000;
 const { Expense } = require('../database/database');
 
@@ -20,8 +21,12 @@ app.get('/users/signup', async (req, res) => {
       return res.status(400).json({err: "BAD PARAMETERS . SOMETHING IS MISSING"})
     }
     try {
-      const expense = await Expense.create({ name, email, password });
-      res.json(expense);
+      const saltRounds = 10
+      bcrypt.hash(password,saltRounds,async(err,hash)=>{
+      await Expense.create({ name, email, password: hash});
+      res.status(201).json({message: "SUCCESSFULLY CREATE NEW USER"})
+      })
+      
     } catch (err) {
       if (err.name === 'SequelizeUniqueConstraintError') {
         res.status(400).json({ error: 'Email already exists' });
