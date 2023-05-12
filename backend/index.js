@@ -8,34 +8,34 @@ const { Expense } = require('../database/database');
 
 app.use(express.json());
 app.use(cors());
-    // getting request
+// getting request
 app.get('/users/signup', async (req, res) => {
-    const expenses = await Expense.findAll();
-    res.json(expenses);
-  });
-  
-  // posting request
-  app.post('/users/signup', async (req, res) => {
-    const { name, email , password } = req.body;
-    if (name === undefined || name.length === 0 || password == null || password.length === 0 || email == null || email.length ===0){
-      return res.status(400).json({err: "BAD PARAMETERS . SOMETHING IS MISSING"})
+  const expenses = await Expense.findAll();
+  res.json(expenses);
+});
+
+// posting request
+app.post('/users/signup', async (req, res) => {
+  const { name, email, password } = req.body;
+  if (name === undefined || name.length === 0 || password == null || password.length === 0 || email == null || email.length === 0) {
+    return res.status(400).json({ err: "BAD PARAMETERS . SOMETHING IS MISSING" })
+  }
+  try {
+    const saltRounds = 10
+    bcrypt.hash(password, saltRounds, async (err, hash) => {
+      await Expense.create({ name, email, password: hash });
+      res.status(201).json({ message: "SUCCESSFULLY CREATE NEW USER" })
+    })
+
+  } catch (err) {
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      res.status(400).json({ error: 'Email already exists' });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
     }
-    try {
-      const saltRounds = 10
-      bcrypt.hash(password,saltRounds,async(err,hash)=>{
-      await Expense.create({ name, email, password: hash});
-      res.status(201).json({message: "SUCCESSFULLY CREATE NEW USER"})
-      })
-      
-    } catch (err) {
-      if (err.name === 'SequelizeUniqueConstraintError') {
-        res.status(400).json({ error: 'Email already exists' });
-      } else {
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    }
-  });
-  // Defining a route for the sign-in page
+  }
+});
+// Defining a route for the sign-in page
 // Defining a route for the sign-in page
 app.get('/users/signin', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'signin.html'));
@@ -51,15 +51,25 @@ app.post('/users/signin', async (req, res) => {
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    if (user.password !== password) {
-      res.status(401).json({ error: 'Incorrect password' });
-      return;
-    }
-    res.json({ message: 'Logged in successfully' });
+    bcrypt.compare(password, user.password, (err, result) => {
+      if (err) {
+        res.status(500).json({ success: false, message: "Something went wrong" })
+      }
+      if (result === true) {
+        res.status(200).json({ success: true, message: 'Logged in successfully' });
+      }
+      else {
+        res.json({ message: 'Password is Incorrect' });
+      }
+    })
+
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
+
 app.listen(port, () => {
   console.log(`Port running on localhost ${port}`)
 })
