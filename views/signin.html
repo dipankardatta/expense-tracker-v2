@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGN IN PAGE</title>
+</head>
+<body>
+    <h1>Sign In</h1>
+  <form id="signin-form">
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <button type="submit">Sign In</button>
+  </form>
+  <a href="signup.html">New user Sign Up</a>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    const form = document.querySelector('#signin-form');
+    const API_URL = 'http://localhost:3000/users/signin'
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      console.log(e.target.name)
+      const email = document.querySelector('#email').value;
+      const password = document.querySelector('#password').value;
+      try {
+        const response = await axios.post(API_URL , { email, password });
+        if (response.status === 200){
+          alert(response.data.message);
+        }
+        else{
+          throw new Error (response.data.message)
+        }
+      } catch (error) {
+        console.log(JSON.stringify(error))
+        
+      }
+    });
+  </script>
+</body>
+</html>

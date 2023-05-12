@@ -30,7 +30,31 @@ app.get('/users/signup', async (req, res) => {
       }
     }
   });
-  
+  // Defining a route for the sign-in page
+// Defining a route for the sign-in page
+app.get('/users/signin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'signin.html'));
+});
+
+
+// Defining a route for handling the sign-in form submission
+app.post('/users/signin', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await Expense.findOne({ where: { email } });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    if (user.password !== password) {
+      res.status(401).json({ error: 'Incorrect password' });
+      return;
+    }
+    res.json({ message: 'Logged in successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 app.listen(port, () => {
   console.log(`Port running on localhost ${port}`)
 })
