@@ -27,6 +27,7 @@
         const expensesList = document.getElementById('expenses-list');
         const totalExpense = document.getElementById('total-expense');
         const API_URL = 'http://localhost:3000/users/expenses';
+        const token = localStorage.getItem('token')
 
 
         // Add a new expense to the database and update the total
@@ -44,7 +45,7 @@
         // Remove an expense from the database and update the total
         async function removeExpense(id) {
             try {
-                await axios.delete(`${API_URL}/${id}`);
+                await axios.delete(`${API_URL}/${id}`,{ headers: { 'Authorization': token } });
                 updateTotal();
                 renderExpenses();
             } catch (error) {
@@ -55,7 +56,7 @@
         // Update the total value of all expenses
         async function updateTotal() {
             try {
-                const response = await axios.get(API_URL);
+                const response = await axios.get(API_URL,{ headers: { 'Authorization': token } });
                 const expenses = response.data;
                 const total = expenses.reduce((acc, cur) => acc + cur.amount, 0);
                 totalExpense.textContent = total.toFixed(2);
@@ -66,7 +67,7 @@
 
         // Render the list of expenses from the database to the page
         function renderExpenses() {
-            axios.get(API_URL)
+            axios.get(API_URL,{ headers: { 'Authorization': token } })
                 .then(response => {
                     expensesList.innerHTML = '';
                     const expenses = response.data;

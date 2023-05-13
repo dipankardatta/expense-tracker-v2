@@ -35,12 +35,10 @@
       const password = document.querySelector('#password').value;
       try {
         const response = await axios.post(API_URL, { email, password });
-        if (response.status === 200) {
           alert(response.data.message);
+          console.log(response.data);
+          localStorage.setItem('token', response.data.token)
           window.location.href = 'expense.html'
-        } else {
-          alert('Invalid email or password');
-        }
       } catch (error) {
         if (error.response && error.response.data && error.response.data.error) {
           alert(error.response.data.error);
