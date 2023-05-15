@@ -4,8 +4,8 @@ const cors = require('cors');
 const app = express();
 const bcrypt = require('bcrypt')
 const port = 3000;
-const { User } = require('../database/database');
-const { Expense } = require('../database/database');
+const { User } = require('../util/database');
+const { Expense } = require('../util/database');
 const jwt = require('jsonwebtoken')
 const userauthentication = require ('../middleware/auth')
 

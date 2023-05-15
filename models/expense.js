@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
+const sequelize = require('../util/database')
 
-module.exports = (sequelize) => {
   const Expense = sequelize.define('expense', {
     id: {
       type: Sequelize.INTEGER,
@@ -10,7 +10,6 @@ module.exports = (sequelize) => {
     },
     name: Sequelize.STRING,
     amount: Sequelize.FLOAT
-  });
+  })
 
-  return Expense;
-};
+  module.exports = Expense
