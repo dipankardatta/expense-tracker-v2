@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const Expense = require('../models/expense');
 const Order = require('../models/orders')
+const forgotPwd = require('../models/forgotpwd')
 const jwt = require('jsonwebtoken');
 const sequelize = require('../util/database')
 
@@ -33,6 +34,9 @@ Expense.belongsTo(User);
 
 User.hasMany(Order)
 Order.belongsTo(User)
+
+User.hasMany(forgotPwd)
+forgotPwd.belongsTo(User)
 
 // Getting request
 app.get('/users/signup', async (req, res) => {
