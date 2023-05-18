@@ -17,8 +17,11 @@
         <input type="number" id="expense-amount" required>
         <button type="submit">Add</button>
     </form>
+    <div id="premiummsg"></div>
     <button id="rzp-btn1"> !! BUY PREMIUM !!</button>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <div id="message"></div>
+    <div id="leaderboard"></div>
     <ul id="expenses-list"></ul>
     <div>Total Expense: Rs<span id="total-expense">0.00</span></div>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -32,13 +35,24 @@
         const token = localStorage.getItem('token')
         const rzpbtn = document.getElementById("rzp-btn1")
 
+        window.addEventListener('DOMContentLoaded', function (event) {
+            const decodetoken = parseJwt(token)
+            const ispremiumuser = decodetoken.ispremiumuser
+            console.log(ispremiumuser)
+            if (ispremiumuser) {
+                showPremiumuserMessage()
+                showLeaderboard()
+            }
+        })
+
 
         // Add a new expense to the database and update the total
         async function addExpense(name, amount) {
             try {
                 console.log('Adding expense:', name, amount);
                 const response = await axios.post(API_URL, { name, amount }, { headers: { 'Authorization': token } });
-                updateTotal();
+                console.log(response)
+                // updateTotal();
                 renderExpenses();
             } catch (error) {
                 console.error(error);
@@ -48,8 +62,9 @@
         // Remove an expense from the database and update the total
         async function removeExpense(id) {
             try {
-                await axios.delete(`${API_URL}/${id}`, { headers: { 'Authorization': token } });
-                updateTotal();
+                const response = await axios.delete(`${API_URL}/${id}`, { headers: { 'Authorization': token } });
+                console.log(response)
+                // updateTotal();
                 renderExpenses();
             } catch (error) {
                 console.error(error);
@@ -57,14 +72,31 @@
         }
 
         // Update the total value of all expenses
-        async function updateTotal() {
-            try {
-                const response = await axios.get(API_URL, { headers: { 'Authorization': token } });
-                const total = response.data.expense.reduce((acc, cur) => acc + cur.amount, 0);
-                totalExpense.textContent = total.toFixed(2);
-            } catch (error) {
-                console.error(error);
-            }
+        // async function updateTotal() {
+        //     try {
+        //         const response = await axios.get(API_URL, { headers: { 'Authorization': token } });
+        //         const total = response.data.expense.reduce((acc, cur) => acc + cur.amount, 0);
+        //         totalExpense.textContent = total.toFixed(2);
+        //     } catch (error) {
+        //         console.error(error);
+        //     }
+        // }
+
+        // function to show message
+        function showPremiumuserMessage() {
+            rzpbtn.style.visibility = 'hidden'
+            document.getElementById('premiummsg').innerHTML = "HEY WELCOME TO THE PREMIUM FAMILY"
+        }
+
+        // decoding jwt code without using library
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
         }
 
         // handling razorpay button
@@ -77,12 +109,19 @@
                 "key": response.data.key_id,
                 "order_id": response.data.order.id,
                 'handler': async function (response) {
-                    await axios.post('http://localhost:3000/purchase/updatestatus', {
+                    const updateResponse = await axios.post('http://localhost:3000/purchase/updatestatus', {
                         order_id: options.order_id,
                         payment_id: response.razorpay_payment_id
                     }, { headers: { 'Authorization': token } });
 
                     alert('You are a premium user now');
+                    rzpbtn.style.visibility = 'hidden'
+                    localStorage.setItem('token', updateResponse.data.token)
+                    console.log(updateResponse.data.token)
+                    showPremiumuserMessage()
+                    showLeaderboard()
+                    // document.getElementById('premiummsg').innerHTML = "HEY WELCOME TO THE PREMIUM FAMILY"
+
                 },
             };
 
@@ -99,20 +138,30 @@
 
 
         // Render the list of expenses from the database to the page
+        // ...
+
+        // Render the list of expenses from the database to the page
         function renderExpenses() {
-            axios.get(API_URL, { headers: { 'Authorization': token } })
+            axios
+                .get(API_URL, { headers: { 'Authorization': token } })
                 .then(response => {
                     expensesList.innerHTML = '';
+                    let total = 0; // Initialize total expense
                     response.data.expense.forEach(expense => {
                         const li = document.createElement('li');
                         li.innerHTML = `${expense.name}: Rs ${expense.amount.toFixed(2)} <button class="delete" data-id="${expense.id}">X</button>`;
                         expensesList.appendChild(li);
+                        total += expense.amount; // Accumulate expense amount
                     });
+                    totalExpense.textContent = total.toFixed(2); // Display total expense
                 })
                 .catch(error => {
                     console.error(error);
                 });
         }
+
+        // ...
+
 
         // Handle form submit event
         form.addEventListener('submit', async e => {
@@ -132,9 +181,26 @@
             }
         });
 
+        function showLeaderboard() {
+            const inputElement = document.createElement('input')
+            inputElement.type = 'button'
+            inputElement.value = 'Show Leaderboard'
+            inputElement.onclick = async () => {
+                const userLeaderBoardArray = await axios.get('http://localhost:3000/premium/showleaderboard',{ headers: { 'Authorization': token } })
+                console.log(userLeaderBoardArray)
+
+                var leaderboardElem = document.getElementById('leaderboard')
+                leaderboardElem.innerHTML += '<h1> Leader Board</h1>'
+                userLeaderBoardArray.data.forEach((userDetails) => {
+                    leaderboardElem.innerHTML += `<li> Name - ${userDetails.name} Total Expenses ${userDetails.totalExpenses}`
+                })
+            }
+            document.getElementById('message').appendChild(inputElement)
+        }
+
         // Render the initial list of expenses and total
         renderExpenses();
-        updateTotal();
+        // updateTotal();
     </script>
 </body>
 

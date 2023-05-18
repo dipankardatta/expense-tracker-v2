@@ -2,9 +2,11 @@ const bcrypt = require('bcrypt');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
-const generateAccessToken = (id, name, ispremiumuser) => {
+function generateAccessToken(id, name, ispremiumuser) {
   return jwt.sign({ userId: id, name: name,ispremiumuser }, 'secretkey');
 }
+  
+
 
 exports.getAllUsers = async (req, res) => {
   const user = await User.findAll();
@@ -55,6 +57,6 @@ exports.signInUser = async (req, res) => {
   }
 };
 
-module.exports = {
-  generateAccessToken
-}
+// module.exports = {
+//   generateAccessToken
+// }

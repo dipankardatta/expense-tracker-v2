@@ -21,13 +21,13 @@ const createExpense = async (req, res) => {
     return res.status(400).json({success:false, message:'Paramters Missing'})
   }
   Expense.create({ name, amount, userId: req.user.id }).then(expense =>{
-    const totalExpense = Number(req.user.totalExp) + Number(amount)
-    console.log(totalExp)
+    const totalExpense = Number(req.user.totalExpenses) + Number(amount)
+    console.log(totalExpense)
     User.update({
-      totalExp: totalExpense
+      totalExpenses: totalExpense
     },{
       where: {id: req.user.id},
-      transaction :t
+      // transaction :t
     }).then(async() => {
       await t.commit()
       return res.status(200).json({expense: expense})
@@ -45,21 +45,50 @@ const createExpense = async (req, res) => {
 
 const deleteExpense = async (req, res) => {
   try {
-    const { id } = req.params;
-
+    const delexp = req.params.id;
     const t = await sequelize.transaction();
+    const user = await User.findByPk(req.user.id);
 
-    await Expense.destroy({ where: { id, userId: req.user.id }, transaction: t });
+    if (delexp == undefined || delexp.length == 0) {
+      return res.status(400).json({ success: false });
+    }
 
-    await t.commit();
+    try {
+      const expense = await Expense.findOne({
+        where: { id: delexp, userId: req.user.id },
+        transaction: t,
+      });
 
-    res.sendStatus(204);
+      if (!expense) {
+        return res.status(404).json({ success: false, message: 'Expense Not found' });
+      }
+
+      await Expense.destroy({
+        where: { id: delexp, userId: req.user.id },
+        transaction: t,
+      });
+
+      user.totalExpenses -= expense.amount;
+      await user.save({ transaction: t });
+
+      await t.commit();
+      return res.sendStatus(204);
+    } catch (err) {
+      await t.rollback();
+      console.log(err);
+      return res.status(500).json({ success: false, message: 'Failed', user: user });
+    }
   } catch (error) {
     console.log(error);
-    await t.rollback();
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
+module.exports = {
+  deleteExpense,
+};
+
+
 
 
 module.exports = {

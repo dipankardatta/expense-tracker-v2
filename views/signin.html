@@ -23,7 +23,7 @@
     </div>
     <button type="submit">Sign In</button>
   </form>
-
+  <button onclick="forgotpassword()"> Forgot password</button>
   <a href="signup.html">New user Sign Up</a>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script>
@@ -47,6 +47,10 @@
         }
       }
     });
+
+    function forgotpassword(){
+      window.location.href = 'forgotPassword.html'
+    }
   </script>
 </body>
 

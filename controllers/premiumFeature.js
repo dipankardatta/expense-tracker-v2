@@ -5,9 +5,9 @@ const Sequelize = require('../util/database')
 const getUserLeaderBoard = async (req, res) => {
     try {
         const topUsers = await User.findAll({
-            attributes:['name','totalExp'],
+            attributes:['name','totalExpenses'],
             // group:['user.id'],
-            order:[['totalExp','DESC']],
+            order:[['totalExpenses','DESC']],
             limit:10,
         });
 

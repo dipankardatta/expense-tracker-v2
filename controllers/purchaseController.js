@@ -3,6 +3,11 @@ const Order = require('../models/orders')
 const userController = require('../controllers/userController')
 const User = require('../models/user')
 require('dotenv').config()
+const jwt = require('jsonwebtoken');
+
+function generateAccessToken(id, name, ispremiumuser) {
+    return jwt.sign({ userId: id, name: name,ispremiumuser }, 'secretkey');
+  }
 
 exports.purchasepremium = async (req, res,next) => {
     try {
@@ -37,8 +42,8 @@ exports.updateTransactionStatus = async (req, res,next) => {
 
         Promise.all([promise1, promise2]).then(() => {
             const userId = req.user.id
-            const token = userController.generateAccessToken(userId, undefined , true);
-            return res.status(202).json({ success: true, message: "Transaction Successful" , token });
+            const token = generateAccessToken(userId,req.user.name , true);
+            return res.status(202).json({ success: true, message: "Transaction Successful",token });
         }).catch((error) => {
             throw new Error(error);
         });
