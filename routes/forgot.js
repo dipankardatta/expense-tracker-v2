@@ -7,6 +7,6 @@ router.get('/updatepassword/:resetpasswordid', resetpasswordController.updatePwd
 
 router.get('/resetpassword/:id', resetpasswordController.resetPwd)
 
-router.use('/forgotpassword', resetpasswordController.forgotPwd);
+router.use('/forgotpassword/:email', resetpasswordController.forgotPwd);
 
 module.exports = router;

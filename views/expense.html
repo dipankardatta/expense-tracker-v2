@@ -24,6 +24,7 @@
     <div id="leaderboard"></div>
     <ul id="expenses-list"></ul>
     <div>Total Expense: Rs<span id="total-expense">0.00</span></div>
+    <button onclick="download()" id="downloadexpense">Download File</button>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
         const form = document.getElementById('expense-form');
@@ -186,7 +187,7 @@
             inputElement.type = 'button'
             inputElement.value = 'Show Leaderboard'
             inputElement.onclick = async () => {
-                const userLeaderBoardArray = await axios.get('http://localhost:3000/premium/showleaderboard',{ headers: { 'Authorization': token } })
+                const userLeaderBoardArray = await axios.get('http://localhost:3000/premium/showleaderboard', { headers: { 'Authorization': token } })
                 console.log(userLeaderBoardArray)
 
                 var leaderboardElem = document.getElementById('leaderboard')
@@ -196,6 +197,25 @@
                 })
             }
             document.getElementById('message').appendChild(inputElement)
+        }
+        function download() {
+            axios.get('http://localhost:3000/user/download', { headers: { "Authorization": token } })
+                .then((response) => {
+                    if (response.status === 201) {
+                        //the bcakend is essentially sending a download link
+                        //  which if we open in browser, the file would download
+                        var a = document.createElement("a");
+                        a.href = response.data.fileUrl;
+                        a.download = 'myexpense.csv';
+                        a.click();
+                    } else {
+                        throw new Error(response.data.message)
+                    }
+
+                })
+                .catch((err) => {
+                    showError(err)
+                });
         }
 
         // Render the initial list of expenses and total
