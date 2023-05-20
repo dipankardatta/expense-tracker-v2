@@ -10,21 +10,33 @@
 </head>
 
 <body>
-    <form id="expense-form">
-        <label for="expense-name">Name:</label>
-        <input type="text" id="expense-name" required>
-        <label for="expense-amount">Amount:</label>
-        <input type="number" id="expense-amount" required>
-        <button type="submit">Add</button>
-    </form>
-    <div id="premiummsg"></div>
-    <button id="rzp-btn1"> !! BUY PREMIUM !!</button>
+    <div id="container">
+        <form id="expense-form">
+            <div class="form-group">
+                <label for="expense-name">Expense Name:</label>
+                <input type="text" id="expense-name" required>
+            </div>
+            <div class="form-group">
+                <label for="expense-amount">Amount:</label>
+                <input type="number" id="expense-amount" required>
+            </div>
+            <button type="submit">Add</button>
+        </form>
+
+        <div id="premiummsg"></div>
+        <button id="rzp-btn1"> !! BUY PREMIUM !!</button>
+
+        <div id="message"></div>
+        <div id="leaderboard"></div>
+
+        <h3>Expense List</h3>
+        <ul id="expenses-list"></ul>
+
+        <div>Total Expense: Rs<span id="total-expense">0.00</span></div>
+        <button onclick="download()" id="downloadexpense">Download File</button>
+    </div>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <div id="message"></div>
-    <div id="leaderboard"></div>
-    <ul id="expenses-list"></ul>
-    <div>Total Expense: Rs<span id="total-expense">0.00</span></div>
-    <button onclick="download()" id="downloadexpense">Download File</button>
+
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
         const form = document.getElementById('expense-form');
@@ -43,6 +55,7 @@
             if (ispremiumuser) {
                 showPremiumuserMessage()
                 showLeaderboard()
+                download()
             }
         })
 
@@ -121,6 +134,7 @@
                     console.log(updateResponse.data.token)
                     showPremiumuserMessage()
                     showLeaderboard()
+                    download()
                     // document.getElementById('premiummsg').innerHTML = "HEY WELCOME TO THE PREMIUM FAMILY"
 
                 },
@@ -193,19 +207,19 @@
                 var leaderboardElem = document.getElementById('leaderboard')
                 leaderboardElem.innerHTML += '<h1> Leader Board</h1>'
                 userLeaderBoardArray.data.forEach((userDetails) => {
-                    leaderboardElem.innerHTML += `<li> Name - ${userDetails.name} Total Expenses ${userDetails.totalExpenses}`
+                    leaderboardElem.innerHTML += `<li> Name - ${userDetails.name} Total Expenses ${userDetails.totalExpenses}</li>`
                 })
             }
             document.getElementById('message').appendChild(inputElement)
         }
         function download() {
-            axios.get('http://localhost:3000/user/download', { headers: { "Authorization": token } })
+            axios.get('http://localhost:3000/users/expenses/download', { headers: { "Authorization": token } })
                 .then((response) => {
                     if (response.status === 201) {
                         //the bcakend is essentially sending a download link
                         //  which if we open in browser, the file would download
                         var a = document.createElement("a");
-                        a.href = response.data.fileUrl;
+                        a.href = response.data.fileURL;
                         a.download = 'myexpense.csv';
                         a.click();
                     } else {
@@ -214,7 +228,7 @@
 
                 })
                 .catch((err) => {
-                    showError(err)
+                    console.log(err)
                 });
         }
 
