@@ -20,6 +20,14 @@
                 <label for="expense-amount">Amount:</label>
                 <input type="number" id="expense-amount" required>
             </div>
+            <div class="form-group">
+                <label for="page-size">Page Size:</label>
+                <select id="page-size">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
             <button type="submit">Add</button>
         </form>
 
@@ -30,11 +38,13 @@
         <div id="leaderboard"></div>
 
         <h3>Expense List</h3>
+
         <ul id="expenses-list"></ul>
 
         <div>Total Expense: Rs<span id="total-expense">0.00</span></div>
         <button onclick="download()" id="downloadexpense">Download File</button>
     </div>
+    <div id="pagination"></div>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -48,16 +58,80 @@
         const token = localStorage.getItem('token')
         const rzpbtn = document.getElementById("rzp-btn1")
 
-        window.addEventListener('DOMContentLoaded', function (event) {
-            const decodetoken = parseJwt(token)
-            const ispremiumuser = decodetoken.ispremiumuser
-            console.log(ispremiumuser)
-            if (ispremiumuser) {
-                showPremiumuserMessage()
-                showLeaderboard()
-                download()
+        const pageSizeSelect = document.getElementById('page-size');
+        pageSizeSelect.addEventListener('change', async () => {
+            await updatePageSize()
+            renderExpenses();
+        });
+
+        async function pageSize() {
+            const selectElement = document.getElementById('page-size');
+
+            const selectedPageSize = selectElement.value;
+            try {
+                localStorage.setItem('pageSize', selectedPageSize);
+                const page = 1;
+                await renderExpenses(page); // Pass the current page as an argument
+            } catch (err) {
+                console.log(err);
             }
-        })
+        }
+
+
+
+        window.addEventListener('DOMContentLoaded', async function (event) {
+            const decodetoken = parseJwt(token);
+            const ispremiumuser = decodetoken.ispremiumuser;
+            const pageSize = document.getElementById('page-size').value;
+            console.log(ispremiumuser);
+            if (ispremiumuser) {
+                showPremiumuserMessage();
+                showLeaderboard();
+            }
+            pageSizeSelect.value = localStorage.getItem('pageSize') || 10;
+            // await pageSize(); // Call pageSize function to set the correct page size
+            renderExpenses();
+            const response = await axios.get(API_URL, { headers: { 'Authorization': token } });
+            const { currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage } = response.data;
+            showPagination({ currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage });
+        });
+
+        // Render the list of expenses from the database to the page
+        function renderExpenses(currentPage) {
+            const pageSize = parseInt(pageSizeSelect.value);
+            axios
+                .get(API_URL, {
+                    headers: { Authorization: token },
+                    params: { currentPage, pageSize },
+                })
+                .then((response) => {
+                    console.log(response);
+                    expensesList.innerHTML = '';
+                    let total = 0; // Initialize total expense
+                    if (response.data.allExpense) {
+                        // Check if the data array exists
+                        response.data.allExpense.forEach((expense) => {
+                            const li = document.createElement('li');
+                            const amount = expense.amount ? expense.amount.toFixed(2) : 'N/A'; // Check if amount is defined
+                            li.innerHTML = `${expense.name}: Rs ${amount} <button class="delete" data-id="${expense.id}">X</button>`;
+                            expensesList.appendChild(li);
+                            total += expense.amount || 0; // Accumulate expense amount or use 0 if undefined
+                        });
+                    }
+                    if (totalExpense) {
+                        totalExpense.textContent = total.toFixed(2); // Display total expense
+                    }
+
+                    // Update pagination
+                    const { currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage } = response.data;
+                    showPagination({ currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage });
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
+
+
 
 
         // Add a new expense to the database and update the total
@@ -66,35 +140,26 @@
                 console.log('Adding expense:', name, amount);
                 const response = await axios.post(API_URL, { name, amount }, { headers: { 'Authorization': token } });
                 console.log(response)
-                // updateTotal();
-                renderExpenses();
+                // const currentPage = response.data.currentPage;
+                // const pageSize = document.getElementById('page-size').value;
+                renderExpenses(response.data.currenPage);
             } catch (error) {
                 console.error(error);
             }
         }
 
         // Remove an expense from the database and update the total
-        async function removeExpense(id) {
+        async function removeExpense(id,currentPage) {
             try {
                 const response = await axios.delete(`${API_URL}/${id}`, { headers: { 'Authorization': token } });
                 console.log(response)
-                // updateTotal();
-                renderExpenses();
+                // const currentPage = response.data.currentPage;
+                // const pageSize = document.getElementById('page-size').value;
+                renderExpenses(currentPage);
             } catch (error) {
                 console.error(error);
             }
         }
-
-        // Update the total value of all expenses
-        // async function updateTotal() {
-        //     try {
-        //         const response = await axios.get(API_URL, { headers: { 'Authorization': token } });
-        //         const total = response.data.expense.reduce((acc, cur) => acc + cur.amount, 0);
-        //         totalExpense.textContent = total.toFixed(2);
-        //     } catch (error) {
-        //         console.error(error);
-        //     }
-        // }
 
         // function to show message
         function showPremiumuserMessage() {
@@ -135,7 +200,7 @@
                     showPremiumuserMessage()
                     showLeaderboard()
                     download()
-                    // document.getElementById('premiummsg').innerHTML = "HEY WELCOME TO THE PREMIUM FAMILY"
+                    document.getElementById('premiummsg').innerHTML = "HEY WELCOME TO THE PREMIUM FAMILY"
 
                 },
             };
@@ -150,32 +215,39 @@
             });
         };
 
-
-
         // Render the list of expenses from the database to the page
-        // ...
 
-        // Render the list of expenses from the database to the page
-        function renderExpenses() {
-            axios
-                .get(API_URL, { headers: { 'Authorization': token } })
-                .then(response => {
-                    expensesList.innerHTML = '';
-                    let total = 0; // Initialize total expense
-                    response.data.expense.forEach(expense => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `${expense.name}: Rs ${expense.amount.toFixed(2)} <button class="delete" data-id="${expense.id}">X</button>`;
-                        expensesList.appendChild(li);
-                        total += expense.amount; // Accumulate expense amount
-                    });
-                    totalExpense.textContent = total.toFixed(2); // Display total expense
-                })
-                .catch(error => {
-                    console.error(error);
-                });
-        }
 
-        // ...
+
+        // Add a new expense to the database and update the total
+        // async function addExpense(name, amount) {
+        //     try {
+        //         console.log('Adding expense:', name, amount);
+        //         const response = await axios.post(
+        //             API_URL,
+        //             { name, amount },
+        //             { headers: { Authorization: token } }
+        //         );
+        //         console.log(response);
+        //         renderExpenses(currentPage);
+        //     } catch (error) {
+        //         console.error(error);
+        //     }
+        // }
+
+        // Remove an expense from the database and update the total
+        // async function removeExpense(id,currentPage) {
+        //     try {
+        //         const response = await axios.delete(`${API_URL}/${id}`, {
+        //             headers: { Authorization: token },
+        //         });
+        //         console.log(response);
+        //         renderExpenses(currentPage);
+        //     } catch (error) {
+        //         console.error(error);
+        //     }
+        // }
+
 
 
         // Handle form submit event
@@ -197,44 +269,113 @@
         });
 
         function showLeaderboard() {
-            const inputElement = document.createElement('input')
-            inputElement.type = 'button'
-            inputElement.value = 'Show Leaderboard'
+            const inputElement = document.createElement('input');
+            inputElement.type = 'button';
+            inputElement.value = 'Show Leaderboard';
             inputElement.onclick = async () => {
-                const userLeaderBoardArray = await axios.get('http://localhost:3000/premium/showleaderboard', { headers: { 'Authorization': token } })
-                console.log(userLeaderBoardArray)
+                const userLeaderBoardArray = await axios.get('http://localhost:3000/premium/showleaderboard', {
+                    headers: { 'Authorization': token }
+                });
+                console.log(userLeaderBoardArray);
 
-                var leaderboardElem = document.getElementById('leaderboard')
-                leaderboardElem.innerHTML += '<h1> Leader Board</h1>'
+                var leaderboardElem = document.getElementById('leaderboard');
+                leaderboardElem.innerHTML = '<h1>Leader Board</h1>'; // Set the heading only once
+
                 userLeaderBoardArray.data.forEach((userDetails) => {
-                    leaderboardElem.innerHTML += `<li> Name - ${userDetails.name} Total Expenses ${userDetails.totalExpenses}</li>`
-                })
-            }
-            document.getElementById('message').appendChild(inputElement)
+                    leaderboardElem.innerHTML += `<li> Name - ${userDetails.name} Total Expenses ${userDetails.totalExpenses}</li>`;
+                });
+            };
+            document.getElementById('message').appendChild(inputElement);
         }
-        function download() {
-            axios.get('http://localhost:3000/users/expenses/download', { headers: { "Authorization": token } })
-                .then((response) => {
-                    if (response.status === 201) {
-                        //the bcakend is essentially sending a download link
-                        //  which if we open in browser, the file would download
-                        var a = document.createElement("a");
-                        a.href = response.data.fileURL;
-                        a.download = 'myexpense.csv';
-                        a.click();
-                    } else {
-                        throw new Error(response.data.message)
-                    }
 
+        function download() {
+            axios
+                .get('http://localhost:3000/users/expenses/download', {
+                    headers: { 'Authorization': token },
+                })
+                .then((response) => {
+                    console.log(response);
+                    if (response.status === 200)// The backend is essentially sending the fileURL in the response data
+                    {
+                        const fileURL = response.data.fileURL;
+                        if (fileURL) {
+                            var a = document.createElement('a');
+                            a.href = fileURL;
+                            a.download = 'myexpense.csv';
+                            a.click();
+                        } else {
+                            console.log('File URL not found in the response data');
+                        }
+                    } else {
+                        console.log(response.data.message);
+                    }
                 })
                 .catch((err) => {
-                    console.log(err)
+                    console.log(err);
                 });
         }
 
-        // Render the initial list of expenses and total
-        renderExpenses();
-        // updateTotal();
+
+
+        async function showPagination({ currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage }) {
+            try {
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = '';
+
+                if (hasPreviousPage) {
+                    const btn2 = document.createElement('button');
+                    btn2.innerHTML = hasPreviousPage;
+                    btn2.addEventListener('click', () => renderExpenses(hasPreviousPage, pageSize));
+                    pagination.appendChild(btn2);
+                }
+
+                const btn1 = document.createElement('button');
+                btn1.innerHTML = currentPage;
+                btn1.addEventListener('click', () => renderExpenses(currentPage, pageSize));
+                pagination.appendChild(btn1);
+
+                if (hasNextPage) {
+                    const btn3 = document.createElement('button');
+                    btn3.innerHTML = nextPage;
+                    btn3.addEventListener('click', () => renderExpenses(nextPage, pageSize));
+                    pagination.appendChild(btn3);
+                }
+
+                if (currentPage !== lastPage) {
+                    const btn4 = document.createElement('button');
+                    btn4.innerHTML = lastPage;
+                    btn4.addEventListener('click', () => renderExpenses(lastPage, pageSize));
+                    pagination.appendChild(btn4);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        async function updatePageSize() {
+            const selectElement = document.getElementById('page-size');
+            const selectedPageSize = selectElement.value;
+            try {
+                localStorage.setItem('pageSize', selectedPageSize);
+                const page = 1;
+                const res = await axios.get(`http://localhost:3000/users/expenses?page=${page}&pageSize=${selectedPageSize}`, { headers: { 'Authorization': token } });
+                renderExpenses();
+                showPagination(res.data);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+        async function getExpenses(page) {
+            try {
+                const token = localStorage.getItem('token');
+                const pageSize = localStorage.getItem('pageSize');
+                const response = await axios.get(`http://localhost:3000/users/expenses?page=${page}&pageSize=${pageSize}`, { headers: { 'Authorization': token } });
+                renderExpenses();
+                showPagination(response.data);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
     </script>
 </body>
 

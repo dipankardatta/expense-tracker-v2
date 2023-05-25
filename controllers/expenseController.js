@@ -1,64 +1,71 @@
 const Expense = require('../models/expense');
 const User = require('../models/user')
+const Downloadreport= require('../models/Downloadreport')
 const sequelize = require('../util/database')
-const AWS = require('aws-sdk')
 const Userservices = require('../services/userservices')
+const S3services = require('../services/S3services')
 
-function uploadToS3(data,filename){
-    const BUCKET_NAME = 'expensetrackss';
-    const IAM_USER_KEY = 'AKIASH3WOREHVTOHVWVW';
-    const IAM_USER_SECRET='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';
 
-    let s3bucket = new AWS.S3({
-      accessKeyId : IAM_USER_KEY,
-      secretAccessKey: IAM_USER_SECRET,
-    })
-       var params = {
-        Bucket: BUCKET_NAME,
-        Key: filename,
-        Body: data,
-        ACL: 'public-read'
-      }
-      return new Promise ((resolve,reject)=>{
-        s3bucket.upload(params,(err,s3response)=>{
-          if(err){
-            console.log('Something went wrong',err)
-            reject(err)
-          }
-          else{
-            // console.log('success', s3response)
-            resolve( s3response.Location)
-          }
-        })
-      })
-      
-}
+    
+const getExpenses = async (req, res) => {
+  try {
+    const check = req.user.ispremiumuser;
+    const page = +req.query.page || 1;
+    const pageSize = +req.query.pageSize || 10;
+    
+    const { count, rows: data } = await Expense.findAndCountAll({
+      where: {
+        userId: req.user.id,
+      },
+      offset: (page - 1) * pageSize,
+      limit: pageSize,
+      order: [['id', 'DESC']],
+    });
+
+    res.status(200).json({
+      allExpense: data,
+      check,
+      currentPage: page,
+      hasNextPage: pageSize * page < count,
+      nextPage: page + 1,
+      hasPreviousPage: page > 1,
+      previousPage: page - 1,
+      lastPage: Math.ceil(count / pageSize),
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+
+  
+  // Expense.findAll({where: {userId: req.user.id}}).then(expense =>{
+  //     return res.status(200).json({ expense, success:true})
+//   }).catch(err => {
+//       console.log(err);
+//       res.status(500).json({ error: err,success: false });
+//   })
+// };
 
 const downloadExpense = async (req,res) =>{
   try {
     const expenses = await Userservices.getExpenses(req)
     const stringifiedExpenses = JSON.stringify(expenses);
-    const userId = req.user.id
-    const filename = `Expense${userId}/${new Date()}.txt`;
-    const fileURL = await uploadToS3( stringifiedExpenses,filename);
+    const filename = `Expense_${req.user.id}/${new Date()}.txt`;
+    const fileURL = await S3services.uploadToS3( stringifiedExpenses,filename);
+    await Downloadreport.create({fileURL:fileURL,userId:req.user.id})
+    // const downloadreport = await req.user.createDownloadreport({URL:fileURL})
     res.status(200).json({fileURL,success: true})
   } catch(err){
     console.log(err)
-    res.status(500).json({fileURL:"",success:false,err:null})
+    res.status(500).json({fileURL:"",success:false,error:err})
   }
     
     
 }
 
-const getExpenses = async (req, res) => {
-  
-    Expense.findAll({where: {userId: req.user.id}}).then(expense =>{
-        return res.status(200).json({ expense, success:true})
-    }).catch(err => {
-        console.log(err);
-        res.status(500).json({ error: err,success: false });
-    })
-};
 
 const createExpense = async (req, res) => {
   const t = await sequelize.transaction()
@@ -130,11 +137,6 @@ const deleteExpense = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
-
-module.exports = {
-  deleteExpense,
-};
-
 
 
 
