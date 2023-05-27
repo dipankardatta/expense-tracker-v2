@@ -54,7 +54,7 @@
         const inputAmount = document.getElementById('expense-amount');
         const expensesList = document.getElementById('expenses-list');
         const totalExpense = document.getElementById('total-expense');
-        const API_URL = 'http://localhost:3000/users/expenses';
+        const API_URL = 'http://18.222.219.135:3000/users/expenses';
         const token = localStorage.getItem('token')
         const rzpbtn = document.getElementById("rzp-btn1")
 
@@ -179,14 +179,14 @@
         // handling razorpay button
 
         rzpbtn.onclick = async function (e) {
-            const response = await axios.get('http://localhost:3000/purchase/premiummembership', { headers: { 'Authorization': token } });
+            const response = await axios.get('http://18.222.219.135:3000/purchase/premiummembership', { headers: { 'Authorization': token } });
             console.log(response.data.key_id);
 
             var options = {
                 "key": response.data.key_id,
                 "order_id": response.data.order.id,
                 'handler': async function (response) {
-                    const updateResponse = await axios.post('http://localhost:3000/purchase/updatestatus', {
+                    const updateResponse = await axios.post('http://18.222.219.135:3000/purchase/updatestatus', {
                         order_id: options.order_id,
                         payment_id: response.razorpay_payment_id
                     }, { headers: { 'Authorization': token } });
@@ -236,7 +236,7 @@
             inputElement.type = 'button';
             inputElement.value = 'Show Leaderboard';
             inputElement.onclick = async () => {
-                const userLeaderBoardArray = await axios.get('http://localhost:3000/premium/showleaderboard', {
+                const userLeaderBoardArray = await axios.get('http://18.222.219.135:3000/premium/showleaderboard', {
                     headers: { 'Authorization': token }
                 });
                 console.log(userLeaderBoardArray);
@@ -253,7 +253,7 @@
 
         function download() {
             axios
-                .get('http://localhost:3000/users/expenses/download', {
+                .get('http://18.222.219.135:3000/users/expenses/download', {
                     headers: { 'Authorization': token },
                 })
                 .then((response) => {
@@ -320,7 +320,7 @@
             try {
                 localStorage.setItem('pageSize', selectedPageSize);
                 const page = 1;
-                const res = await axios.get(`http://localhost:3000/users/expenses?page=${page}&pageSize=${selectedPageSize}`, { headers: { 'Authorization': token } });
+                const res = await axios.get(`http://18.222.219.135:3000/users/expenses?page=${page}&pageSize=${selectedPageSize}`, { headers: { 'Authorization': token } });
                 renderExpenses(1);
                 showPagination(res.data);
             } catch (err) {
@@ -331,7 +331,7 @@
             try {
                 const token = localStorage.getItem('token');
                 const pageSize = localStorage.getItem('pageSize');
-                const response = await axios.get(`http://localhost:3000/users/expenses?page=${page}&pageSize=${pageSize}`, { headers: { 'Authorization': token } });
+                const response = await axios.get(`http://18.222.219.135:3000/users/expenses?page=${page}&pageSize=${pageSize}`, { headers: { 'Authorization': token } });
                 renderExpenses(page);
                 showPagination(response.data);
             } catch (err) {
