@@ -38,13 +38,10 @@ app.use('/purchase', purchaseRoutes)
 app.use('/premium', premiumFeatureRoutes)
 app.use('/password',forgotRoutes)
 
-// app.use((req,res)=>{
-//   console.log('urlll',req.url);
-//   express.static(path.join(__dirname,`views/${req.url}`))
-// })
-// Add this code
-app.use(express.static(path.join(__dirname, 'views')));
-
+app.use((req,res)=>{
+  console.log('urlll',req.url);
+  res.sendFile(path.join(__dirname,`views/${req.url}`))
+})
 
 
 
