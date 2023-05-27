@@ -38,17 +38,6 @@ const getExpenses = async (req, res) => {
   }
 };
 
-
-
-  
-  // Expense.findAll({where: {userId: req.user.id}}).then(expense =>{
-  //     return res.status(200).json({ expense, success:true})
-//   }).catch(err => {
-//       console.log(err);
-//       res.status(500).json({ error: err,success: false });
-//   })
-// };
-
 const downloadExpense = async (req,res) =>{
   try {
     const expenses = await Userservices.getExpenses(req)

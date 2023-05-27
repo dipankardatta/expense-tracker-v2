@@ -6,14 +6,14 @@ require('dotenv').config()
 const jwt = require('jsonwebtoken');
 
 function generateAccessToken(id, name, ispremiumuser) {
-    return jwt.sign({ userId: id, name: name,ispremiumuser }, 'secretkey');
+    return jwt.sign({ userId: id, name: name,ispremiumuser }, process.env.SECRET_KEY);
   }
 
 exports.purchasepremium = async (req, res,next) => {
     try {
         var rzp = new Razorpay({
-            key_id: 'rzp_test_IyfQErT959Lg2Y',
-            key_secret: `ngT6bZuSA5lk3d9Y4MO0yxPa`
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
         })
         const amount = 2500
 

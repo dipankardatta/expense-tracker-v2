@@ -4,8 +4,6 @@ require('dotenv').config();
 const User = require('../models/user');
 const Forgotpwd = require('../models/forgotpwd');
 const bcrypt = require('bcrypt');
-// const uuid = require('uuid')
-// const sgMail = require('@sendgrid/mail')
 
 
 
@@ -19,7 +17,8 @@ exports.forgotPwd = async (req, res, next) => {
             const resetToken = await Forgotpwd.create({ userId: user.id, isActive: true });
             const client = sib.ApiClient.instance;
             const apiKey = client.authentications['api-key'];
-            apiKey.apiKey = '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';
+            apiKey.apiKey = process.env.API_KEY 
+            // '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';
 
             const tranEmailApi = new sib.TransactionalEmailsApi();
 

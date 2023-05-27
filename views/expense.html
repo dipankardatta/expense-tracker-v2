@@ -101,8 +101,8 @@
             const pageSize = parseInt(pageSizeSelect.value);
             axios
                 .get(API_URL, {
-                    headers: { Authorization: token },
-                    params: { currentPage, pageSize },
+                    headers: { 'Authorization': token },
+                    params: { page: currentPage, pageSize },
                 })
                 .then((response) => {
                     console.log(response);
@@ -140,16 +140,14 @@
                 console.log('Adding expense:', name, amount);
                 const response = await axios.post(API_URL, { name, amount }, { headers: { 'Authorization': token } });
                 console.log(response)
-                // const currentPage = response.data.currentPage;
-                // const pageSize = document.getElementById('page-size').value;
-                renderExpenses(response.data.currenPage);
+                renderExpenses(response.data.currentPage);
             } catch (error) {
                 console.error(error);
             }
         }
 
         // Remove an expense from the database and update the total
-        async function removeExpense(id,currentPage) {
+        async function removeExpense(id, currentPage) {
             try {
                 const response = await axios.delete(`${API_URL}/${id}`, { headers: { 'Authorization': token } });
                 console.log(response)
@@ -214,41 +212,6 @@
                 alert('Something went wrong');
             });
         };
-
-        // Render the list of expenses from the database to the page
-
-
-
-        // Add a new expense to the database and update the total
-        // async function addExpense(name, amount) {
-        //     try {
-        //         console.log('Adding expense:', name, amount);
-        //         const response = await axios.post(
-        //             API_URL,
-        //             { name, amount },
-        //             { headers: { Authorization: token } }
-        //         );
-        //         console.log(response);
-        //         renderExpenses(currentPage);
-        //     } catch (error) {
-        //         console.error(error);
-        //     }
-        // }
-
-        // Remove an expense from the database and update the total
-        // async function removeExpense(id,currentPage) {
-        //     try {
-        //         const response = await axios.delete(`${API_URL}/${id}`, {
-        //             headers: { Authorization: token },
-        //         });
-        //         console.log(response);
-        //         renderExpenses(currentPage);
-        //     } catch (error) {
-        //         console.error(error);
-        //     }
-        // }
-
-
 
         // Handle form submit event
         form.addEventListener('submit', async e => {
@@ -324,27 +287,27 @@
 
                 if (hasPreviousPage) {
                     const btn2 = document.createElement('button');
-                    btn2.innerHTML = hasPreviousPage;
-                    btn2.addEventListener('click', () => renderExpenses(hasPreviousPage, pageSize));
+                    btn2.innerHTML = currentPage - 1;
+                    btn2.addEventListener('click', () => renderExpenses(currentPage-1));
                     pagination.appendChild(btn2);
                 }
 
                 const btn1 = document.createElement('button');
                 btn1.innerHTML = currentPage;
-                btn1.addEventListener('click', () => renderExpenses(currentPage, pageSize));
+                btn1.addEventListener('click', () => renderExpenses(currentPage));
                 pagination.appendChild(btn1);
 
                 if (hasNextPage) {
                     const btn3 = document.createElement('button');
-                    btn3.innerHTML = nextPage;
-                    btn3.addEventListener('click', () => renderExpenses(nextPage, pageSize));
+                    btn3.innerHTML = currentPage+1;
+                    btn3.addEventListener('click', () => renderExpenses(currentPage+1));
                     pagination.appendChild(btn3);
                 }
 
-                if (currentPage !== lastPage) {
+                if (currentPage !== 1) {
                     const btn4 = document.createElement('button');
-                    btn4.innerHTML = lastPage;
-                    btn4.addEventListener('click', () => renderExpenses(lastPage, pageSize));
+                    btn4.innerHTML = 'main-page';
+                    btn4.addEventListener('click', () => renderExpenses(1));
                     pagination.appendChild(btn4);
                 }
             } catch (error) {
@@ -358,18 +321,18 @@
                 localStorage.setItem('pageSize', selectedPageSize);
                 const page = 1;
                 const res = await axios.get(`http://localhost:3000/users/expenses?page=${page}&pageSize=${selectedPageSize}`, { headers: { 'Authorization': token } });
-                renderExpenses();
+                renderExpenses(1);
                 showPagination(res.data);
             } catch (err) {
                 console.log(err);
             }
         }
-        async function getExpenses(page) {
+        async function getProducts(page) {
             try {
                 const token = localStorage.getItem('token');
                 const pageSize = localStorage.getItem('pageSize');
                 const response = await axios.get(`http://localhost:3000/users/expenses?page=${page}&pageSize=${pageSize}`, { headers: { 'Authorization': token } });
-                renderExpenses();
+                renderExpenses(page);
                 showPagination(response.data);
             } catch (err) {
                 console.log(err);

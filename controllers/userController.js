@@ -3,7 +3,7 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
 function generateAccessToken(id, name, ispremiumuser) {
-  return jwt.sign({ userId: id, name: name,ispremiumuser }, 'secretkey');
+  return jwt.sign({ userId: id, name: name,ispremiumuser }, process.env.SECRET_KEY);
 }
   
 
@@ -39,23 +39,46 @@ exports.signInUser = async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
+      return res.status(404).json({ error: 'User not found' });
     }
     bcrypt.compare(password, user.password, (err, result) => {
       if (err) {
-        res.status(500).json({ success: false, message: "Something went wrong" })
+        return res.status(500).json({ success: false, message: "Something went wrong" });
       }
-      if (result === true) {
+      if (result) {
         return res.status(200).json({ success: true, message: 'Logged in successfully', token: generateAccessToken(user.id, user.name, user.ispremiumuser) });
       } else {
-        return res.json({ message: 'Password is Incorrect' });
+        return res.status(401).json({ error: 'Incorrect password', message: 'The password you entered is incorrect.' });
       }
-    })
+    });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+
+// exports.signInUser = async (req, res) => {
+//   const { email, password } = req.body;
+//   try {
+//     const user = await User.findOne({ where: { email } });
+//     if (!user) {
+//       res.status(404).json({ error: 'User not found' });
+//       return;
+//     }
+//     bcrypt.compare(password, user.password, (err, result) => {
+//       if (err) {
+//         res.status(500).json({ success: false, message: "Something went wrong" })
+//       }
+//       if (result === true) {
+//         return res.status(200).json({ success: true, message: 'Logged in successfully', token: generateAccessToken(user.id, user.name, user.ispremiumuser) });
+//       } else {
+//         return res.json({ message: 'Password is Incorrect' });
+//       }
+//     })
+//   } catch (err) {
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// };
 
 // module.exports = {
 //   generateAccessToken
