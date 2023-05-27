@@ -1,0 +1,88 @@
+#container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#expense-form {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.form-group {
+  margin-right: 10px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100px;
+}
+
+button[type="submit"],
+#rzp-btn1,
+#downloadexpense {
+  padding: 12px 20px;
+  background-color: #ff375e; /* Hot Pink */
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button[type="submit"]:hover,
+#rzp-btn1:hover,
+#downloadexpense:hover {
+  background-color: #d60048; /* Darker shade of Hot Pink */
+}
+
+#premiummsg,
+#message,
+#leaderboard,
+#expenses-list,
+#pagination {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #ededed; /* Light Gray */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#total-expense {
+  font-weight: bold;
+}
+
+#expenses-list {
+  padding: 0;
+  list-style-type: none;
+}
+
+#downloadexpense {
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  #expense-form {
+    flex-direction: column;
+  }
+
+  .form-group {
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+}

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="../styles/expense.css">
+</head>
+
+<body>
+    <div id="container">
+        <form id="expense-form">
+            <div class="form-group">
+                <label for="expense-name">Expense Name:</label>
+                <input type="text" id="expense-name" required>
+            </div>
+            <div class="form-group">
+                <label for="expense-amount">Amount:</label>
+                <input type="number" id="expense-amount" required>
+            </div>
+            <div class="form-group">
+                <label for="page-size">Page Size:</label>
+                <select id="page-size">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <button type="submit">Add</button>
+        </form>
+
+        <div id="premiummsg"></div>
+        <button id="rzp-btn1"> !! BUY PREMIUM !!</button>
+
+        <div id="message"></div>
+        <div id="leaderboard"></div>
+
+        <h3>Expense List</h3>
+
+        <ul id="expenses-list"></ul>
+
+        <div>Total Expense: Rs<span id="total-expense">0.00</span></div>
+        <button onclick="download()" id="downloadexpense">Download File</button>
+    </div>
+    <div id="pagination"></div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        const form = document.getElementById('expense-form');
+        const inputName = document.getElementById('expense-name');
+        const inputAmount = document.getElementById('expense-amount');
+        const expensesList = document.getElementById('expenses-list');
+        const totalExpense = document.getElementById('total-expense');
+        const API_URL = 'http://18.222.219.135:3000/users/expenses';
+        const token = localStorage.getItem('token')
+        const rzpbtn = document.getElementById("rzp-btn1")
+
+        const pageSizeSelect = document.getElementById('page-size');
+        pageSizeSelect.addEventListener('change', async () => {
+            await updatePageSize()
+            renderExpenses();
+        });
+
+        async function pageSize() {
+            const selectElement = document.getElementById('page-size');
+
+            const selectedPageSize = selectElement.value;
+            try {
+                localStorage.setItem('pageSize', selectedPageSize);
+                const page = 1;
+                await renderExpenses(page); // Pass the current page as an argument
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
+
+
+        window.addEventListener('DOMContentLoaded', async function (event) {
+            const decodetoken = parseJwt(token);
+            const ispremiumuser = decodetoken.ispremiumuser;
+            const pageSize = document.getElementById('page-size').value;
+            console.log(ispremiumuser);
+            if (ispremiumuser) {
+                showPremiumuserMessage();
+                showLeaderboard();
+            }
+            pageSizeSelect.value = localStorage.getItem('pageSize') || 10;
+            // await pageSize(); // Call pageSize function to set the correct page size
+            renderExpenses();
+            const response = await axios.get(API_URL, { headers: { 'Authorization': token } });
+            const { currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage } = response.data;
+            showPagination({ currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage });
+        });
+
+        // Render the list of expenses from the database to the page
+        function renderExpenses(currentPage) {
+            const pageSize = parseInt(pageSizeSelect.value);
+            axios
+                .get(API_URL, {
+                    headers: { 'Authorization': token },
+                    params: { page: currentPage, pageSize },
+                })
+                .then((response) => {
+                    console.log(response);
+                    expensesList.innerHTML = '';
+                    let total = 0; // Initialize total expense
+                    if (response.data.allExpense) {
+                        // Check if the data array exists
+                        response.data.allExpense.forEach((expense) => {
+                            const li = document.createElement('li');
+                            const amount = expense.amount ? expense.amount.toFixed(2) : 'N/A'; // Check if amount is defined
+                            li.innerHTML = `${expense.name}: Rs ${amount} <button class="delete" data-id="${expense.id}">X</button>`;
+                            expensesList.appendChild(li);
+                            total += expense.amount || 0; // Accumulate expense amount or use 0 if undefined
+                        });
+                    }
+                    if (totalExpense) {
+                        totalExpense.textContent = total.toFixed(2); // Display total expense
+                    }
+
+                    // Update pagination
+                    const { currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage } = response.data;
+                    showPagination({ currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage });
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
+
+
+
+
+        // Add a new expense to the database and update the total
+        async function addExpense(name, amount) {
+            try {
+                console.log('Adding expense:', name, amount);
+                const response = await axios.post(API_URL, { name, amount }, { headers: { 'Authorization': token } });
+                console.log(response)
+                renderExpenses(response.data.currentPage);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Remove an expense from the database and update the total
+        async function removeExpense(id, currentPage) {
+            try {
+                const response = await axios.delete(`${API_URL}/${id}`, { headers: { 'Authorization': token } });
+                console.log(response)
+                // const currentPage = response.data.currentPage;
+                // const pageSize = document.getElementById('page-size').value;
+                renderExpenses(currentPage);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // function to show message
+        function showPremiumuserMessage() {
+            rzpbtn.style.visibility = 'hidden'
+            document.getElementById('premiummsg').innerHTML = "HEY WELCOME TO THE PREMIUM FAMILY"
+        }
+
+        // decoding jwt code without using library
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
+        }
+
+        // handling razorpay button
+
+        rzpbtn.onclick = async function (e) {
+            const response = await axios.get('http://18.222.219.135:3000/purchase/premiummembership', { headers: { 'Authorization': token } });
+            console.log(response.data.key_id);
+
+            var options = {
+                "key": response.data.key_id,
+                "order_id": response.data.order.id,
+                'handler': async function (response) {
+                    const updateResponse = await axios.post('http://18.222.219.135:3000/purchase/updatestatus', {
+                        order_id: options.order_id,
+                        payment_id: response.razorpay_payment_id
+                    }, { headers: { 'Authorization': token } });
+
+                    alert('You are a premium user now');
+                    rzpbtn.style.visibility = 'hidden'
+                    localStorage.setItem('token', updateResponse.data.token)
+                    console.log(updateResponse.data.token)
+                    showPremiumuserMessage()
+                    showLeaderboard()
+                    download()
+                    document.getElementById('premiummsg').innerHTML = "HEY WELCOME TO THE PREMIUM FAMILY"
+
+                },
+            };
+
+            const rzpl = new Razorpay(options);
+            rzpl.open();
+            e.preventDefault();
+
+            rzpl.on('payment.failed', function (response) {
+                console.log(response);
+                alert('Something went wrong');
+            });
+        };
+
+        // Handle form submit event
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const name = inputName.value;
+            const amount = parseFloat(inputAmount.value);
+            await addExpense(name, amount);
+            inputName.value = '';
+            inputAmount.value = '';
+        });
+
+        // Handle delete button click event
+        expensesList.addEventListener('click', async e => {
+            if (e.target.matches('button.delete')) {
+                const id = e.target.dataset.id;
+                await removeExpense(id);
+            }
+        });
+
+        function showLeaderboard() {
+            const inputElement = document.createElement('input');
+            inputElement.type = 'button';
+            inputElement.value = 'Show Leaderboard';
+            inputElement.onclick = async () => {
+                const userLeaderBoardArray = await axios.get('http://18.222.219.135:3000/premium/showleaderboard', {
+                    headers: { 'Authorization': token }
+                });
+                console.log(userLeaderBoardArray);
+
+                var leaderboardElem = document.getElementById('leaderboard');
+                leaderboardElem.innerHTML = '<h1>Leader Board</h1>'; // Set the heading only once
+
+                userLeaderBoardArray.data.forEach((userDetails) => {
+                    leaderboardElem.innerHTML += `<li> Name - ${userDetails.name} Total Expenses ${userDetails.totalExpenses}</li>`;
+                });
+            };
+            document.getElementById('message').appendChild(inputElement);
+        }
+
+        function download() {
+            axios
+                .get('http://18.222.219.135:3000/users/expenses/download', {
+                    headers: { 'Authorization': token },
+                })
+                .then((response) => {
+                    console.log(response);
+                    if (response.status === 200)// The backend is essentially sending the fileURL in the response data
+                    {
+                        const fileURL = response.data.fileURL;
+                        if (fileURL) {
+                            var a = document.createElement('a');
+                            a.href = fileURL;
+                            a.download = 'myexpense.csv';
+                            a.click();
+                        } else {
+                            console.log('File URL not found in the response data');
+                        }
+                    } else {
+                        console.log(response.data.message);
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+        }
+
+
+
+        async function showPagination({ currentPage, hasNextPage, nextPage, hasPreviousPage, lastPage }) {
+            try {
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = '';
+
+                if (hasPreviousPage) {
+                    const btn2 = document.createElement('button');
+                    btn2.innerHTML = currentPage - 1;
+                    btn2.addEventListener('click', () => renderExpenses(currentPage-1));
+                    pagination.appendChild(btn2);
+                }
+
+                const btn1 = document.createElement('button');
+                btn1.innerHTML = currentPage;
+                btn1.addEventListener('click', () => renderExpenses(currentPage));
+                pagination.appendChild(btn1);
+
+                if (hasNextPage) {
+                    const btn3 = document.createElement('button');
+                    btn3.innerHTML = currentPage+1;
+                    btn3.addEventListener('click', () => renderExpenses(currentPage+1));
+                    pagination.appendChild(btn3);
+                }
+
+                if (currentPage !== 1) {
+                    const btn4 = document.createElement('button');
+                    btn4.innerHTML = 'main-page';
+                    btn4.addEventListener('click', () => renderExpenses(1));
+                    pagination.appendChild(btn4);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        async function updatePageSize() {
+            const selectElement = document.getElementById('page-size');
+            const selectedPageSize = selectElement.value;
+            try {
+                localStorage.setItem('pageSize', selectedPageSize);
+                const page = 1;
+                const res = await axios.get(`http://18.222.219.135:3000/users/expenses?page=${page}&pageSize=${selectedPageSize}`, { headers: { 'Authorization': token } });
+                renderExpenses(1);
+                showPagination(res.data);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+        async function getProducts(page) {
+            try {
+                const token = localStorage.getItem('token');
+                const pageSize = localStorage.getItem('pageSize');
+                const response = await axios.get(`http://18.222.219.135:3000/users/expenses?page=${page}&pageSize=${pageSize}`, { headers: { 'Authorization': token } });
+                renderExpenses(page);
+                showPagination(response.data);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
+    </script>
+</body>
+
+</html>

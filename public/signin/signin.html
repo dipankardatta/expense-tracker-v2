@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGN IN PAGE</title>
+  <link rel="stylesheet" href="../styles/signin.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Sign In</h1>
+    <form id="signin-form" action="/signin" method="POST" >
+      <h2>Sign In</h2>
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit">Sign In</button>
+    </form>
+    <button onclick="forgotpassword()">Forgot password</button>
+    <a href="../signup/signup.html">New user Sign Up</a>
+  </div>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    const form = document.querySelector('#signin-form');
+    const API_URL = 'http://18.222.219.135:3000/users/signin'
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.querySelector('#email').value;
+      const password = document.querySelector('#password').value;
+      try {
+        const response = await axios.post(API_URL, { email, password });
+        alert(response.data.message);
+        console.log(response.data);
+
+        if (response.data.success) {
+          localStorage.setItem('token', response.data.token);
+          window.location.href = 'expense.html'
+        }
+
+      } catch (error) {
+        if (error.response && error.response.data && error.response.data.error) {
+          alert(error.response.data.error);
+        } else {
+          alert('An error occurred');
+        }
+      }
+    });
+
+    function forgotpassword() {
+      window.location.href = 'forgotPassword.html'
+    }
+  </script>
+</body>
+
+</html>
