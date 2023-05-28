@@ -25,12 +25,12 @@
       <button type="submit">Sign In</button>
     </form>
     <button onclick="forgotpassword()">Forgot password</button>
-    <a href="../signup/signup.html">New user Sign Up</a>
+    <a href="../signup//signup.html">New user Sign Up</a>
   </div>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script>
     const form = document.querySelector('#signin-form');
-    const API_URL = 'http://18.222.219.135:3000/users/signin'
+    const API_URL = 'http://18.223.58.107:3000/users/signin'
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.querySelector('#email').value;
@@ -42,7 +42,7 @@
 
         if (response.data.success) {
           localStorage.setItem('token', response.data.token);
-          window.location.href = 'expense.html'
+          window.location.href = '../expense/expense.html'
         }
 
       } catch (error) {
@@ -55,7 +55,7 @@
     });
 
     function forgotpassword() {
-      window.location.href = 'forgotPassword.html'
+      window.location.href = '../forgotpass/forgotPassword.html'
     }
   </script>
 </body>
